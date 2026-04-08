@@ -8,13 +8,44 @@ const sourceSans = Source_Sans_3({
   weight: ["400", "600", "700"],
 });
 
+const SITE_NAME = "Rumah Qurban";
+
+/** Ringkasan untuk SEO, Open Graph, dan pratinjau sosial (Bahasa Indonesia). */
+export const SITE_OG_DESCRIPTION =
+  "Platform Qurban Terpercaya — katalog resmi, checkout aman, lacak pesanan dengan nomor invoice, dan dokumentasi penyembelihan untuk pelanggan B2C.";
+
 export const metadata: Metadata = {
   metadataBase: process.env.NEXT_PUBLIC_SITE_URL
     ? new URL(process.env.NEXT_PUBLIC_SITE_URL)
     : undefined,
-  title: "Rumah Qurban",
-  description:
-    "Layanan qurban terpercaya — katalog, checkout, dan pelacakan pesanan.",
+  title: {
+    default: `${SITE_NAME} — Qurban Antar, Berbagi & Kaleng`,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_OG_DESCRIPTION,
+  openGraph: {
+    title: `${SITE_NAME} — Qurban Antar, Berbagi & Kaleng`,
+    description: SITE_OG_DESCRIPTION,
+    siteName: SITE_NAME,
+    locale: "id_ID",
+    type: "website",
+    url: "/",
+    images: [
+      {
+        url: "/logo-agro.png",
+        width: 426,
+        height: 96,
+        alt: SITE_NAME,
+        type: "image/png",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — Qurban Antar, Berbagi & Kaleng`,
+    description: SITE_OG_DESCRIPTION,
+    images: ["/logo-agro.png"],
+  },
 };
 
 export default function RootLayout({

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   Heart,
@@ -16,12 +17,20 @@ export function HomeContent() {
   return (
     <div className="flex flex-col h-full bg-slate-50 overflow-y-auto pb-20">
       <header className="bg-white px-5 py-4 flex justify-between items-center sticky top-0 z-20 shadow-sm">
-        <div className="flex items-center gap-2">
-          <Heart className="text-red-700 fill-red-700" size={24} />
-          <span className="font-bold text-xl text-slate-800 tracking-tight">
-            rumah<span className="text-red-700">qurban</span>
-          </span>
-        </div>
+        <Link
+          href="/"
+          className="flex items-center shrink-0"
+          aria-label="Rumah Qurban — beranda"
+        >
+          <Image
+            src="/logo-agro.png"
+            alt="Rumah Qurban"
+            width={426}
+            height={96}
+            className="h-9 w-auto max-w-[200px] object-contain object-left"
+            priority
+          />
+        </Link>
         <button
           type="button"
           aria-label="Hubungi layanan pelanggan"

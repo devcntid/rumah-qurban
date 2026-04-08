@@ -1,18 +1,4 @@
-import type { Metadata } from "next";
 import { BottomNav } from "@/components/shop/bottom-nav";
-
-export const metadata: Metadata = {
-  title: {
-    template: "%s | Rumah Qurban",
-    default: "Rumah Qurban — Qurban Antar, Berbagi & Kaleng",
-  },
-  description:
-    "Pesan qurban online, pantau pesanan, dan unduh dokumentasi. Layanan B2C Rumah Qurban.",
-  openGraph: {
-    locale: "id_ID",
-    type: "website",
-  },
-};
 
 export default function ShopLayout({
   children,
