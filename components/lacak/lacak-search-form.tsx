@@ -19,11 +19,11 @@ export function LacakSearchForm() {
   return (
     <form onSubmit={onSubmit} className="w-full max-w-sm mx-auto">
       <label className="text-xs font-semibold text-slate-500 mb-1 block">
-        Nomor Invoice
+        No. HP atau Nomor Invoice
       </label>
       <input
         type="text"
-        placeholder="Contoh: INV-WEB-…"
+        placeholder="Contoh: 0812... atau INV-WEB-…"
         className="w-full border border-slate-300 rounded-md p-3.5 mb-2 outline-none focus:border-[#1e3a5f] bg-white font-semibold text-slate-800"
         value={invoice}
         onChange={(e) => setInvoice(e.target.value)}

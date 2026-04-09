@@ -22,8 +22,8 @@ export default function LacakPage() {
           Lacak Pengiriman & Qurban
         </h2>
         <p className="text-center text-sm text-slate-500 mb-8 px-4 max-w-sm">
-          Masukkan nomor invoice yang Anda terima melalui WhatsApp untuk memantau
-          status pesanan.
+          Masukkan Nomor HP Anda atau Nomor Invoice pesanan untuk memantau status
+          qurban Anda.
         </p>
         <LacakSearchForm />
       </div>

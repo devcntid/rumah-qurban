@@ -496,28 +496,40 @@ INSERT INTO "public"."services" ("id", "name", "service_type", "base_price", "br
 
 INSERT INTO "public"."orders" ("id", "invoice_number", "branch_id", "sales_agent_id", "customer_type", "customer_name", "company_name", "customer_phone", "customer_email", "delivery_address", "latitude", "longitude", "subtotal", "discount", "grand_total", "dp_paid", "remaining_balance", "status", "created_at") VALUES
 (1, 'INV-B2B-001', 1, NULL, 'B2B', 'Bpk. Ahmad', 'PT. Telkom', NULL, NULL, NULL, NULL, NULL, 107000000.00, 0.00, 107000000.00, 50000000.00, 57000000.00, 'DP_PAID', '2026-05-20 10:00:00'),
-(2, 'INV-WEB-001', 1, NULL, 'B2C', 'Lili Apriliyani', NULL, '081317854742', NULL, NULL, NULL, NULL, 3150000.00, 0.00, 3150000.00, 3150000.00, 0.00, 'FULL_PAID', '2026-05-21 11:00:00');
+(2, 'INV-WEB-001', 1, NULL, 'B2C', 'Lili Apriliyani', NULL, '081317854742', NULL, 'Jl. Dipatiukur No. 1, Bandung', -6.89123000, 107.60351000, 3150000.00, 0.00, 3150000.00, 3150000.00, 0.00, 'FULL_PAID', '2026-05-21 11:00:00'),
+(3, 'INV-WEB-002', NULL, NULL, 'B2C', 'Hasan Basri', NULL, '081299998888', NULL, NULL, NULL, NULL, 2500000.00, 0.00, 2500000.00, 2500000.00, 0.00, 'FULL_PAID', '2026-05-22 08:00:00');
 
 INSERT INTO "public"."order_items" ("id", "order_id", "item_type", "catalog_offer_id", "service_id", "item_name", "quantity", "unit_price", "total_price", "coa_code") VALUES
 (1, 1, 'ANIMAL', 8, NULL, 'Domba Tipe B (Bandung)', 50, 2100000.00, 105000000.00, NULL),
 (2, 1, 'CUSTOM', NULL, NULL, 'Sewa Truk Fuso B2B', 1, 2000000.00, 2000000.00, NULL),
 (3, 2, 'ANIMAL', 3, NULL, 'Domba Tipe A', 1, 3100000.00, 3100000.00, NULL),
-(4, 2, 'SERVICE', NULL, 1, 'Ongkos Kirim Domba Area Bandung', 1, 50000.00, 50000.00, NULL);
+(4, 2, 'SERVICE', NULL, 1, 'Ongkos Kirim Domba Area Bandung', 1, 50000.00, 50000.00, NULL),
+(5, 3, 'ANIMAL', 7, NULL, 'Qurban Berbagi Domba Kambing', 1, 2500000.00, 2500000.00, NULL);
 
 INSERT INTO "public"."order_participants" ("id", "order_item_id", "participant_name", "father_name") VALUES
-(1, 3, 'Lili Apriliyani', 'Doddy Sebo');
+(1, 3, 'Lili Apriliyani', 'Doddy Sebo'),
+(2, 5, 'Hasan Basri', 'Fulan');
 
 INSERT INTO "public"."farm_inventories" ("id", "eartag_id", "animal_variant_id", "branch_id", "vendor_id", "weight_actual", "photo_url", "status", "order_item_id", "created_at") VALUES
-(1, 'TAG-1001', 4, 1, 1, 24.50, NULL, 'AVAILABLE', NULL, '2026-05-01 08:00:00'),
+(1, 'TAG-1001', 4, 1, 1, 24.50, NULL, 'ALLOCATED', 3, '2026-05-01 08:00:00'),
 (2, 'TAG-1002', 4, 1, 1, 25.10, NULL, 'AVAILABLE', NULL, '2026-05-01 08:00:00'),
-(3, 'TAG-1003', 4, 1, 1, 23.80, NULL, 'AVAILABLE', NULL, '2026-05-01 08:00:00');
+(3, 'TAG-1003', 4, 1, 1, 23.80, NULL, 'AVAILABLE', NULL, '2026-05-01 08:00:00'),
+(4, 'TAG-2001', 6, 117, 2, 25.00, NULL, 'ALLOCATED', 5, '2026-05-23 09:00:00');
 
 INSERT INTO "public"."animal_trackings" ("id", "farm_inventory_id", "milestone", "description", "location_lat", "location_lng", "media_url", "logged_at") VALUES
-(1, 1, 'DOCUMENTATION', 'Foto inventaris', NULL, NULL, 'https://blob.example.com/tag-1001.jpg', '2026-05-01 09:00:00');
+(1, 1, 'Foto Hewan Hidup', 'Hewan qurban Anda dalam kondisi sehat dan siap.', NULL, NULL, 'https://images.pexels.com/photos/288621/pexels-photo-288621.jpeg?auto=compress&cs=tinysrgb&w=600', '2026-05-01 09:00:00'),
+(2, 1, 'Persiapan Pengiriman', 'Hewan sedang disiapkan untuk dimuat ke dalam armada pengiriman.', NULL, NULL, NULL, '2026-05-18 10:00:00'),
+(3, 1, 'Dalam Perjalanan', 'Armada pengiriman sedang menuju ke alamat tujuan pengiriman Anda.', -6.91470000, 107.60980000, NULL, '2026-05-19 08:30:00'),
+(4, 1, 'Hewan Tiba di Lokasi', 'Hewan qurban telah tiba di alamat tujuan Anda dengan selamat.', -6.89120000, 107.60350000, 'https://images.pexels.com/photos/288621/pexels-photo-288621.jpeg?auto=compress&cs=tinysrgb&w=600', '2026-05-19 11:45:00'),
+(5, 4, 'Foto Hewan Hidup', 'Hewan qurban Anda telah disiapkan di kandang desa Brebes.', NULL, NULL, 'https://images.pexels.com/photos/974314/pexels-photo-974314.jpeg?auto=compress&cs=tinysrgb&w=600', '2026-05-23 10:00:00'),
+(6, 4, 'Proses Penyembelihan', 'Alhamdulillah, hewan qurban Anda telah disembelih sesuai syariat.', NULL, NULL, NULL, '2026-05-26 09:00:00'),
+(7, 4, 'Dikirim / Disalurkan', 'Daging qurban telah disalurkan kepada penerima manfaat di sekitar desa Brebes.', NULL, NULL, 'https://images.pexels.com/photos/2034335/pexels-photo-2034335.jpeg?auto=compress&cs=tinysrgb&w=600', '2026-05-26 14:00:00'),
+(8, 4, 'Sertifikat Qurban', 'Sertifikat qurban Anda telah diterbitkan.', NULL, NULL, NULL, '2026-05-27 10:00:00');
 
 INSERT INTO "public"."transactions" ("id", "order_id", "payment_method_code", "transaction_type", "amount", "va_number", "qr_code_url", "status", "created_at") VALUES
 (1, 1, 'TF_MANDIRI', 'DP', 50000000.00, NULL, NULL, 'VERIFIED', '2026-05-20 10:30:00'),
-(2, 2, 'XENDIT_VA_MANDIRI', 'PELUNASAN', 3150000.00, NULL, NULL, 'SUCCESS', '2026-05-21 11:05:00');
+(2, 2, 'XENDIT_VA_MANDIRI', 'PELUNASAN', 3150000.00, NULL, NULL, 'SUCCESS', '2026-05-21 11:05:00'),
+(3, 3, 'XENDIT_QRIS', 'PELUNASAN', 2500000.00, NULL, NULL, 'SUCCESS', '2026-05-22 08:05:00');
 
 CREATE VIEW "public"."view_spreadsheet_catalog" AS ;
 CREATE VIEW "public"."target_vs_actual" AS ;

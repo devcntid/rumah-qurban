@@ -15,9 +15,9 @@ export type TrackerPayload = {
 };
 
 export async function fetchTrackerByInvoice(
-  invoice: string
+  identifier: string
 ): Promise<TrackerPayload | null> {
-  const trimmed = invoice?.trim();
+  const trimmed = identifier?.trim();
   if (!trimmed) return null;
 
   const { rows: orderRows } = await pool.query<{
@@ -27,7 +27,7 @@ export async function fetchTrackerByInvoice(
     status: string;
     created_at: string;
   }>(
-    `SELECT id, invoice_number, customer_name, status, created_at FROM orders WHERE invoice_number = $1`,
+    `SELECT id, invoice_number, customer_name, status, created_at FROM orders WHERE invoice_number = $1 OR customer_phone = $1 ORDER BY created_at DESC LIMIT 1`,
     [trimmed]
   );
 
