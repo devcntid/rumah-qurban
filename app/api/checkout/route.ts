@@ -3,7 +3,7 @@ import { Client } from "@neondatabase/serverless";
 import { pool } from "@/lib/db";
 import { generateInvoiceNumber } from "@/lib/invoice";
 import { computeMaxParticipants } from "@/lib/participants";
-import { sendWhatsApp, renderTemplate } from "@/lib/whatsapp";
+import { sendWhatsApp, renderTemplate, normalizePhone } from "@/lib/whatsapp";
 import { formatIDR } from "@/lib/format-idr";
 
 type ParticipantIn = { name: string; fatherName?: string };
@@ -40,6 +40,7 @@ export async function POST(req: Request) {
       { status: 400 }
     );
   }
+  const phoneNormalized = normalizePhone(phone);
   const code = String(body.payment_method_code ?? "").trim();
   if (!code) {
     return NextResponse.json({ error: "Metode pembayaran wajib" }, { status: 400 });
@@ -54,6 +55,7 @@ export async function POST(req: Request) {
     await client.query("BEGIN");
 
     await client.query(`
+      SELECT setval('customers_id_seq', GREATEST(nextval('customers_id_seq'), (SELECT COALESCE(MAX(id),0)+1 FROM customers)));
       SELECT setval('orders_id_seq', GREATEST(nextval('orders_id_seq'), (SELECT COALESCE(MAX(id),0)+1 FROM orders)));
       SELECT setval('order_items_id_seq', GREATEST(nextval('order_items_id_seq'), (SELECT COALESCE(MAX(id),0)+1 FROM order_items)));
       SELECT setval('order_participants_id_seq', GREATEST(nextval('order_participants_id_seq'), (SELECT COALESCE(MAX(id),0)+1 FROM order_participants)));
@@ -239,22 +241,40 @@ export async function POST(req: Request) {
         ? Number(body.longitude)
         : null;
 
+    const customerUpsert = await client.query<{ id: string }>(
+      `
+      INSERT INTO customers (phone_normalized, name, customer_type, total_orders, total_spent, first_order_date, last_order_date)
+      VALUES ($1, $2, 'B2C', 1, $3, NOW(), NOW())
+      ON CONFLICT (phone_normalized) DO UPDATE SET
+        name = EXCLUDED.name,
+        total_orders = customers.total_orders + 1,
+        total_spent = customers.total_spent + EXCLUDED.total_spent,
+        last_order_date = NOW(),
+        updated_at = NOW()
+      RETURNING id
+      `,
+      [phoneNormalized, name, grandTotal]
+    );
+
+    const customerId = Number(customerUpsert.rows[0].id);
+
     const orderInsert = await client.query<{ id: string }>(
       `
       INSERT INTO orders (
-        invoice_number, branch_id, customer_type, customer_name, customer_phone,
+        invoice_number, branch_id, customer_id, customer_type, customer_name, customer_phone,
         delivery_address, latitude, longitude, subtotal, discount, grand_total,
         dp_paid, remaining_balance, status
       ) VALUES (
-        $1, $2, 'B2C', $3, $4, $5, $6, $7, $8, 0, $9, 0, $9, 'PENDING'
+        $1, $2, $3, 'B2C', $4, $5, $6, $7, $8, $9, 0, $10, 0, $10, 'PENDING'
       )
       RETURNING id
       `,
       [
         invoice,
         branchId,
+        customerId,
         name,
-        phone,
+        phoneNormalized,
         body.delivery_address?.trim() || null,
         lat,
         lng,
@@ -391,7 +411,7 @@ export async function POST(req: Request) {
           tracking_url: trackingUrl,
         });
 
-        const waResult = await sendWhatsApp(phone, message);
+        const waResult = await sendWhatsApp(phoneNormalized, message);
 
         await pool.query(
           `SELECT setval('notif_logs_id_seq',
@@ -406,9 +426,9 @@ export async function POST(req: Request) {
           [
             Number(orderId),
             templateId,
-            phone,
+            phoneNormalized,
             waResult.ok ? "SENT" : "FAILED",
-            JSON.stringify({ messageType: "text", to: phone, body: message }),
+            JSON.stringify({ messageType: "text", to: phoneNormalized, body: message }),
             JSON.stringify(waResult.data ?? { error: waResult.error }),
           ],
         );
