@@ -101,7 +101,7 @@ export function ProductDetailView({
         </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto w-full bg-white border-t p-4 px-5 shadow-sm flex gap-3 z-20">
+      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto w-full bg-white border-t border-slate-200 p-4 px-5 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] flex gap-3 z-20">
         <Link
           href={checkoutPath(product.catalog_offer_id, tab, branchId)}
           className="w-full bg-red-700 text-white py-3 rounded-md font-bold active:bg-red-800 transition-colors text-lg text-center"

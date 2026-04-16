@@ -23,6 +23,10 @@ export const metadata: Metadata = {
     template: `%s | ${SITE_NAME}`,
   },
   description: SITE_OG_DESCRIPTION,
+  icons: {
+    icon: "/favicon-rq.png",
+    apple: "/favicon-rq.png",
+  },
   openGraph: {
     title: `${SITE_NAME} — Qurban Antar, Berbagi & Kaleng`,
     description: SITE_OG_DESCRIPTION,

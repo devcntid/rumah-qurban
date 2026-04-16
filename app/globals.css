@@ -1,4 +1,18 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+/* Leaflet tile fix: Tailwind v4 Preflight resets img to max-width:100% + display:block
+   which breaks map tile rendering. Override specifically for Leaflet containers. */
+.leaflet-container img {
+  max-width: none !important;
+  max-height: none !important;
+}
+.leaflet-container .leaflet-tile-pane {
+  z-index: 1;
+}
+.leaflet-container .leaflet-control-zoom {
+  z-index: 10;
+}
 
 :root {
   /* Selaras refs/rq.jsx: area viewport abu terang, bukan hitam (tanpa dark theme) */
@@ -23,4 +37,41 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+.faq-answer p {
+  margin-bottom: 0.5rem;
+}
+.faq-answer p:last-child {
+  margin-bottom: 0;
+}
+.faq-answer img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+.faq-answer ul,
+.faq-answer ol {
+  padding-left: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+.faq-answer ul {
+  list-style-type: disc;
+}
+.faq-answer ol {
+  list-style-type: decimal;
+}
+.faq-answer li {
+  margin-bottom: 0.25rem;
+}
+.faq-answer a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+.faq-answer strong,
+.faq-answer b {
+  font-weight: 600;
+  color: #334155;
 }

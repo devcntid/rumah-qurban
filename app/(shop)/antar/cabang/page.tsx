@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowLeft, ChevronRight } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { getBranchesCached } from "@/lib/data/catalog";
+import { ShopHeader } from "@/components/shop/shop-header";
 
 export const metadata: Metadata = {
   title: "Pilih Cabang — Qurban Antar",
@@ -13,12 +14,7 @@ export default async function AntarCabangPage() {
 
   return (
     <div className="flex flex-col h-full bg-slate-50 min-h-screen">
-      <header className="bg-white px-4 py-4 shadow-sm flex items-center gap-3 sticky top-0 z-10">
-        <Link href="/" className="text-slate-600 p-1" aria-label="Beranda">
-          <ArrowLeft size={24} />
-        </Link>
-        <h1 className="font-bold text-slate-800 text-lg">Mau Qurban Dimana?</h1>
-      </header>
+      <ShopHeader backHref="/" title="Mau Qurban Dimana?" />
 
       <div className="p-4 space-y-3 overflow-y-auto pb-24">
         <p className="text-sm text-slate-500 mb-2 px-1">

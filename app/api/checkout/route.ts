@@ -3,6 +3,8 @@ import { Client } from "@neondatabase/serverless";
 import { pool } from "@/lib/db";
 import { generateInvoiceNumber } from "@/lib/invoice";
 import { computeMaxParticipants } from "@/lib/participants";
+import { sendWhatsApp, renderTemplate } from "@/lib/whatsapp";
+import { formatIDR } from "@/lib/format-idr";
 
 type ParticipantIn = { name: string; fatherName?: string };
 
@@ -51,6 +53,13 @@ export async function POST(req: Request) {
   try {
     await client.query("BEGIN");
 
+    await client.query(`
+      SELECT setval('orders_id_seq', GREATEST(nextval('orders_id_seq'), (SELECT COALESCE(MAX(id),0)+1 FROM orders)));
+      SELECT setval('order_items_id_seq', GREATEST(nextval('order_items_id_seq'), (SELECT COALESCE(MAX(id),0)+1 FROM order_items)));
+      SELECT setval('order_participants_id_seq', GREATEST(nextval('order_participants_id_seq'), (SELECT COALESCE(MAX(id),0)+1 FROM order_participants)));
+      SELECT setval('transactions_id_seq', GREATEST(nextval('transactions_id_seq'), (SELECT COALESCE(MAX(id),0)+1 FROM transactions)));
+    `);
+
     const pm = await client.query<{ ok: number }>(
       `SELECT 1 AS ok FROM payment_methods WHERE code = $1 AND is_active = true`,
       [code]
@@ -79,7 +88,7 @@ export async function POST(req: Request) {
       INNER JOIN products p ON p.id = co.product_id
       INNER JOIN animal_variants av ON av.id = co.animal_variant_id
       WHERE co.id = $1 AND co.is_active = true
-      FOR UPDATE OF catalog_offers
+      FOR UPDATE OF co
       `,
       [offerId]
     );
@@ -156,24 +165,19 @@ export async function POST(req: Request) {
         `,
         [branchId, variantId]
       );
-      if (ship.rows.length === 0) {
-        await client.query("ROLLBACK");
-        return NextResponse.json(
-          { error: "Biaya pengiriman belum dikonfigurasi untuk cabang ini" },
-          { status: 422 }
-        );
+      if (ship.rows.length > 0) {
+        const sp = Number(ship.rows[0].base_price);
+        const sid = Number(ship.rows[0].id);
+        subtotal += sp;
+        lines.push({
+          type: "SERVICE",
+          catalog_offer_id: null,
+          service_id: sid,
+          item_name: ship.rows[0].name,
+          unit_price: sp,
+          total_price: sp,
+        });
       }
-      const sp = Number(ship.rows[0].base_price);
-      const sid = Number(ship.rows[0].id);
-      subtotal += sp;
-      lines.push({
-        type: "SERVICE",
-        catalog_offer_id: null,
-        service_id: sid,
-        item_name: ship.rows[0].name,
-        unit_price: sp,
-        total_price: sp,
-      });
     }
 
     if (body.slaughter_requested) {
@@ -311,14 +315,15 @@ export async function POST(req: Request) {
 
     await client.query("COMMIT");
 
+    const base =
+      process.env.APP_BASE_URL ||
+      (process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000");
+
     try {
       const token = process.env.QSTASH_TOKEN;
       if (token) {
-        const base =
-          process.env.APP_BASE_URL ||
-          (process.env.VERCEL_URL
-            ? `https://${process.env.VERCEL_URL}`
-            : "http://localhost:3000");
         const { Client } = await import("@upstash/qstash");
         const q = new Client({ token });
         await q.publishJSON({
@@ -328,6 +333,88 @@ export async function POST(req: Request) {
       }
     } catch {
       /* QStash optional in dev */
+    }
+
+    try {
+      const tplRow = await pool.query<{
+        id: string;
+        template_text: string;
+      }>(
+        `SELECT id, template_text FROM notif_templates WHERE name = 'CHECKOUT' LIMIT 1`,
+      );
+
+      if (tplRow.rows.length > 0) {
+        const templateId = Number(tplRow.rows[0].id);
+        const templateText = tplRow.rows[0].template_text;
+
+        const pmRow = await pool.query<{
+          name: string;
+          bank_name: string | null;
+          account_number: string | null;
+          account_holder_name: string | null;
+        }>(
+          `SELECT name, bank_name, account_number, account_holder_name
+           FROM payment_methods WHERE code = $1 LIMIT 1`,
+          [code],
+        );
+
+        let paymentInfo = "-";
+        if (pmRow.rows.length > 0) {
+          const pm = pmRow.rows[0];
+          const parts: string[] = [];
+          if (pm.bank_name) parts.push(pm.bank_name);
+          if (pm.account_number) parts.push(`No. Rek: ${pm.account_number}`);
+          if (pm.account_holder_name) parts.push(`a.n. ${pm.account_holder_name}`);
+          if (parts.length > 0) paymentInfo = parts.join("\n");
+          else paymentInfo = pm.name;
+        }
+
+        const orderDate = new Date().toLocaleDateString("id-ID", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+
+        const participantNames = cleaned.map((p) => p.name).join(", ");
+        const itemName = lines.map((l) => l.item_name).join(", ");
+        const trackingUrl = `${base.replace(/\/$/, "")}/lacak/${invoice}`;
+
+        const message = renderTemplate(templateText, {
+          customer_name: name,
+          order_date: orderDate,
+          invoice_number: invoice,
+          participant_names: participantNames,
+          customer_phone: phone,
+          item_name: itemName,
+          grand_total: formatIDR(grandTotal),
+          payment_info: paymentInfo,
+          tracking_url: trackingUrl,
+        });
+
+        const waResult = await sendWhatsApp(phone, message);
+
+        await pool.query(
+          `SELECT setval('notif_logs_id_seq',
+            GREATEST(nextval('notif_logs_id_seq'),
+              (SELECT COALESCE(MAX(id),0)+1 FROM notif_logs)))`,
+        );
+
+        await pool.query(
+          `INSERT INTO notif_logs
+            (order_id, template_id, target_number, status, payload, provider_response)
+           VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb)`,
+          [
+            Number(orderId),
+            templateId,
+            phone,
+            waResult.ok ? "SENT" : "FAILED",
+            JSON.stringify({ messageType: "text", to: phone, body: message }),
+            JSON.stringify(waResult.data ?? { error: waResult.error }),
+          ],
+        );
+      }
+    } catch (waErr) {
+      console.error("[WhatsApp CHECKOUT]", waErr);
     }
 
     return NextResponse.json({

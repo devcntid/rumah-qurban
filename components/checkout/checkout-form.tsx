@@ -1,19 +1,15 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
-import Link from "next/link";
+import React, { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   CheckCircle,
-  CheckCircle2,
   CreditCard,
   Heart,
-  Map,
-  MapPin,
+  Loader2,
   PlusCircle,
   QrCode,
-  Search,
   Trash2,
   Upload,
   User,
@@ -25,6 +21,8 @@ import type { CatalogProduct, PaymentCategory, PaymentMethodOption } from "@/lib
 import { formatIDR } from "@/lib/format-idr";
 import type { ShopTab } from "@/lib/routes";
 import { productPath } from "@/lib/routes";
+import { ShopHeader } from "@/components/shop/shop-header";
+import { AddressMapPicker, type MapSelection } from "@/components/checkout/address-map-picker";
 
 type Props = {
   product: CatalogProduct;
@@ -54,9 +52,6 @@ export function CheckoutForm({
     lng: "",
   });
   const [isSlaughterRequested, setIsSlaughterRequested] = useState(false);
-  const [showMap, setShowMap] = useState(false);
-  const [mapSearchInput, setMapSearchInput] = useState("");
-  const [isMapSearched, setIsMapSearched] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodOption | null>(
     null
   );
@@ -66,19 +61,15 @@ export function CheckoutForm({
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
-  const osmMapIframe = useMemo(
-    () => (
-      <iframe
-        title="Peta OSM"
-        width="100%"
-        height="180"
-        frameBorder={0}
-        scrolling="no"
-        marginHeight={0}
-        marginWidth={0}
-        src="https://www.openstreetmap.org/export/embed.html?bbox=106.0,-8.0,109.0,-6.0&layer=mapnik"
-      />
-    ),
+  const handleMapSelect = useCallback(
+    (sel: MapSelection) => {
+      setCustomerData((prev) => ({
+        ...prev,
+        address: sel.address,
+        lat: sel.lat ? String(sel.lat) : prev.lat,
+        lng: sel.lng ? String(sel.lng) : prev.lng,
+      }));
+    },
     []
   );
 
@@ -275,16 +266,7 @@ export function CheckoutForm({
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 pb-36">
-      <header className="bg-white px-4 py-4 shadow-sm flex items-center gap-3 sticky top-0 z-10">
-        <Link
-          href={backToProduct}
-          aria-label="Kembali ke detail produk"
-          className="text-slate-600 p-1"
-        >
-          <ArrowLeft size={24} />
-        </Link>
-        <h1 className="font-bold text-slate-800 text-lg">Checkout Pesanan</h1>
-      </header>
+      <ShopHeader backHref={backToProduct} title="Checkout Pesanan" />
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {checkoutError && (
@@ -326,100 +308,14 @@ export function CheckoutForm({
               />
             </div>
             {tab === "ANTAR" && (
-              <div className="relative">
+              <div>
                 <label className="text-xs font-semibold text-slate-500 mb-1 block">
                   Alamat Pengiriman
                 </label>
-                <textarea
-                  className="w-full border border-slate-300 rounded-md p-2 text-sm focus:border-[#1e3a5f] outline-none h-20 bg-slate-50"
-                  placeholder="Alamat lengkap tujuan kirim"
+                <AddressMapPicker
                   value={customerData.address}
-                  onChange={(e) =>
-                    setCustomerData({
-                      ...customerData,
-                      address: e.target.value,
-                    })
-                  }
+                  onSelect={handleMapSelect}
                 />
-
-                <button
-                  type="button"
-                  onClick={() => setShowMap(!showMap)}
-                  className="text-[#1e3a5f] font-semibold text-xs flex items-center mt-2 cursor-pointer hover:underline"
-                >
-                  <Map size={14} className="mr-1" />{" "}
-                  {showMap
-                    ? "Tutup Peta"
-                    : "Pilih Titik di Peta untuk Presisi (Opsional)"}
-                </button>
-                {showMap && (
-                  <div className="mt-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                    <div className="flex gap-2 mb-3">
-                      <div className="relative flex-1">
-                        <Search
-                          size={14}
-                          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Cari jalan atau area..."
-                          className="w-full border border-slate-300 rounded-md py-2 pl-8 pr-2 text-xs focus:border-[#1e3a5f] outline-none bg-white"
-                          value={mapSearchInput}
-                          onChange={(e) => setMapSearchInput(e.target.value)}
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setIsMapSearched(true)}
-                        className="bg-[#1e3a5f] text-white px-3 py-2 rounded-md text-xs font-bold active:bg-blue-900 transition-colors"
-                      >
-                        Cari
-                      </button>
-                    </div>
-
-                    <div className="rounded-md overflow-hidden border border-slate-300 shadow-inner relative bg-slate-200">
-                      {osmMapIframe}
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none pb-4">
-                        <MapPin
-                          size={32}
-                          className={`text-red-600 drop-shadow-md transition-transform ${isMapSearched ? "animate-bounce" : ""}`}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mt-3 flex justify-between items-center text-[10px] text-slate-500 bg-white p-2 rounded border border-slate-200">
-                      <span>
-                        Lat:{" "}
-                        <b className="text-slate-700">
-                          {isMapSearched ? "-6.89123" : customerData.lat || "-"}
-                        </b>
-                      </span>
-                      <span>
-                        Long:{" "}
-                        <b className="text-slate-700">
-                          {isMapSearched ? "107.60351" : customerData.lng || "-"}
-                        </b>
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      className="w-full mt-3 bg-green-600 text-white py-2.5 text-xs font-bold rounded-md active:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                      onClick={() => {
-                        if (isMapSearched) {
-                          setCustomerData({
-                            ...customerData,
-                            lat: "-6.89123",
-                            lng: "107.60351",
-                          });
-                        }
-                        setShowMap(false);
-                      }}
-                    >
-                      <CheckCircle2 size={16} /> Simpan Titik Lokasi
-                    </button>
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -545,7 +441,7 @@ export function CheckoutForm({
         </section>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20">
+      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-200 p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] z-20">
         <div className="flex justify-between items-center mb-3">
           <p className="text-sm font-semibold text-slate-600">Total Tagihan</p>
           <p className="text-xl font-bold text-red-700">
@@ -555,20 +451,25 @@ export function CheckoutForm({
         <button
           type="button"
           onClick={() => {
-            if (paymentMethod) void submitCheckout();
+            if (paymentMethod && !checkoutLoading) void submitCheckout();
           }}
           disabled={!paymentMethod || checkoutLoading}
-          className={`w-full py-3 rounded-md font-bold transition-colors text-center shadow-md ${
+          className={`w-full py-3 rounded-md font-bold transition-colors text-center shadow-md flex items-center justify-center gap-2 ${
             paymentMethod && !checkoutLoading
               ? "bg-[#1e3a5f] text-white active:bg-blue-900"
-              : "bg-slate-200 text-slate-400 cursor-not-allowed"
+              : "bg-slate-200 text-slate-400 cursor-not-allowed pointer-events-none"
           }`}
         >
-          {checkoutLoading
-            ? "Memproses…"
-            : paymentMethod
-              ? "Bayar"
-              : "Pilih Pembayaran"}
+          {checkoutLoading ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              <span>Memproses Pesanan…</span>
+            </>
+          ) : paymentMethod ? (
+            "Bayar"
+          ) : (
+            "Pilih Pembayaran"
+          )}
         </button>
       </div>
     </div>

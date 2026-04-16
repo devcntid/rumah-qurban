@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getOrderByInvoice } from "@/lib/data/order";
+import { getOrderByInvoice, getPaymentInstructions } from "@/lib/data/order";
 import { PaymentInstructionView } from "@/components/checkout/payment-instruction-view";
 
 type Props = {
@@ -37,5 +37,9 @@ export default async function CheckoutInstruksiPage({ searchParams }: Props) {
   const order = await getOrderByInvoice(inv);
   if (!order) notFound();
 
-  return <PaymentInstructionView order={order} />;
+  const instructions = order.payment_method_code
+    ? await getPaymentInstructions(order.payment_method_code)
+    : [];
+
+  return <PaymentInstructionView order={order} instructions={instructions} />;
 }

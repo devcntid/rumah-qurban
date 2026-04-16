@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, HelpCircle, Truck, FileText } from "lucide-react";
+import { Home, HelpCircle, Truck } from "lucide-react";
 
 export function BottomNav() {
   const pathname = usePathname();
@@ -29,12 +29,6 @@ export function BottomNav() {
       {item("/", "Beranda", <Home size={22} className="mb-1" />, pathname === "/")}
       {item("/faq", "FAQ", <HelpCircle size={22} className="mb-1" />, pathname.startsWith("/faq"))}
       {item("/lacak", "Lacak", <Truck size={22} className="mb-1" />, pathname.startsWith("/lacak"))}
-      {item(
-        "/dokumentasi",
-        "Dokumen",
-        <FileText size={22} className="mb-1" />,
-        pathname.startsWith("/dokumentasi")
-      )}
     </nav>
   );
 }

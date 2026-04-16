@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ArrowLeft, MapPin, Search } from "lucide-react";
+import { MapPin } from "lucide-react";
 import type { CatalogProduct } from "@/lib/types/catalog";
 import { formatIDR } from "@/lib/format-idr";
 import type { ShopTab } from "@/lib/routes";
 import { productPath } from "@/lib/routes";
+import { ShopHeader } from "@/components/shop/shop-header";
 
 export function CatalogGrid({
   items,
@@ -23,24 +24,12 @@ export function CatalogGrid({
         ? "Qurban Berbagi"
         : "Qurban Kaleng";
 
+  const catalogTitle =
+    tab === "ANTAR" && branchName ? `${title} · ${branchName}` : title;
+
   return (
     <div className="flex flex-col h-full bg-slate-50 min-h-screen">
-      <header className="bg-[#1e3a5f] text-white px-4 py-4 shadow-sm flex items-center justify-between sticky top-0 z-10">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="p-1 text-white" aria-label="Beranda">
-            <ArrowLeft size={24} />
-          </Link>
-          <div>
-            <h1 className="font-bold text-lg leading-tight">{title}</h1>
-            {tab === "ANTAR" && branchName && (
-              <p className="text-xs text-slate-300 flex items-center gap-1 mt-0.5">
-                <MapPin size={10} /> {branchName}
-              </p>
-            )}
-          </div>
-        </div>
-        <Search size={20} className="text-slate-200" aria-hidden />
-      </header>
+      <ShopHeader backHref="/" title={catalogTitle} />
 
       <div className="flex-1 p-4 space-y-4 overflow-y-auto pb-24">
         {items.length === 0 && (

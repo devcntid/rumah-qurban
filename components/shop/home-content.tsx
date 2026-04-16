@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import {
   Heart,
@@ -10,35 +9,24 @@ import {
   FileText,
   PlayCircle,
 } from "lucide-react";
+import { ShopHeader } from "@/components/shop/shop-header";
 
 export function HomeContent() {
   const year = new Date().getFullYear();
 
   return (
     <div className="flex flex-col h-full bg-slate-50 overflow-y-auto pb-20">
-      <header className="bg-white px-5 py-4 flex justify-between items-center sticky top-0 z-20 shadow-sm">
-        <Link
-          href="/"
-          className="flex items-center shrink-0"
-          aria-label="Rumah Qurban — beranda"
-        >
-          <Image
-            src="/logo-agro.png"
-            alt="Rumah Qurban"
-            width={426}
-            height={96}
-            className="h-9 w-auto max-w-[200px] object-contain object-left"
-            priority
-          />
-        </Link>
-        <button
-          type="button"
-          aria-label="Hubungi layanan pelanggan"
-          className="bg-green-50 text-green-700 py-1.5 rounded-md flex items-center gap-1 text-xs font-bold px-3 border border-green-200"
-        >
-          <Phone size={14} /> CS
-        </button>
-      </header>
+      <ShopHeader
+        actions={
+          <button
+            type="button"
+            aria-label="Hubungi layanan pelanggan"
+            className="bg-green-50 text-green-700 py-1.5 rounded-md flex items-center gap-1 text-xs font-bold px-3 border border-green-200"
+          >
+            <Phone size={14} /> CS
+          </button>
+        }
+      />
 
       <div className="relative bg-slate-900 text-white p-6 pb-12 pt-10">
         <div className="absolute inset-0 opacity-40 mix-blend-overlay">
