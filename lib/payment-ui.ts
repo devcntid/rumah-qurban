@@ -1,6 +1,13 @@
 import type { PaymentCategory, PaymentMethodOption } from "@/lib/types/catalog";
 
-type MethodRow = { code: string; name: string; category: string };
+type MethodRow = {
+  code: string;
+  name: string;
+  category: string;
+  account_holder_name?: string | null;
+  bank_name?: string | null;
+  account_number?: string | null;
+};
 
 function methodVisualType(m: MethodRow): PaymentMethodOption["type"] {
   const lower = `${m.code} ${m.name}`.toLowerCase();
@@ -29,8 +36,8 @@ export function buildPaymentCategories(methods: MethodRow[]): PaymentCategory[] 
     name: m.name,
     type: methodVisualType(m),
     code: m.code,
-    bank: methodVisualType(m) === "va" ? "Bank" : undefined,
-    account: methodVisualType(m) === "transfer" ? "— (cek instruksi)" : undefined,
+    bank: m.bank_name ?? undefined,
+    account: m.account_number ?? undefined,
   });
 
   const out: PaymentCategory[] = [];

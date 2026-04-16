@@ -5,9 +5,12 @@ export type PaymentMethodRow = {
   code: string;
   name: string;
   category: string;
+  account_holder_name: string | null;
+  bank_name: string | null;
+  account_number: string | null;
 };
 
-const CACHE_KEY = "cache:payment_methods:v2";
+const CACHE_KEY = "payment_methods:all";
 const TTL = 300;
 
 export async function getPaymentMethodsCached(): Promise<PaymentMethodRow[]> {
@@ -19,7 +22,10 @@ export async function getPaymentMethodsCached(): Promise<PaymentMethodRow[]> {
   }
 
   const { rows } = await pool.query<PaymentMethodRow>(
-    `SELECT code, name, category FROM payment_methods WHERE is_active = true ORDER BY category, name`
+    `SELECT code, name, category, account_holder_name, bank_name, account_number
+     FROM payment_methods
+     WHERE is_active = true AND is_publish = true
+     ORDER BY category, name`
   );
   if (redis) {
     await redis.set(CACHE_KEY, JSON.stringify({ methods: rows }), { ex: TTL });

@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     `);
 
     const pm = await client.query<{ ok: number }>(
-      `SELECT 1 AS ok FROM payment_methods WHERE code = $1 AND is_active = true`,
+      `SELECT 1 AS ok FROM payment_methods WHERE code = $1 AND is_active = true AND is_publish = true`,
       [code]
     );
     if (pm.rows.length === 0) {
