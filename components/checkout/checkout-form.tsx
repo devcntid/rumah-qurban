@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -40,6 +40,8 @@ export function CheckoutForm({
   paymentCategories,
 }: Props) {
   const router = useRouter();
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
   const [paymentStep, setPaymentStep] = useState(false);
   const [participants, setParticipants] = useState([
     { name: "", fatherName: "" },
@@ -130,7 +132,7 @@ export function CheckoutForm({
         customer_name: customerData.name.trim(),
         customer_phone: customerData.phone.trim(),
         delivery_address:
-          tab === "ANTAR" ? customerData.address.trim() : null,
+          (tab === "ANTAR" || tab === "KALENG") ? customerData.address.trim() : null,
         latitude: latNum != null && !Number.isNaN(latNum) ? latNum : null,
         longitude: lngNum != null && !Number.isNaN(lngNum) ? lngNum : null,
         participants: filled.map((p) => ({
@@ -149,6 +151,7 @@ export function CheckoutForm({
         body: JSON.stringify(body),
       });
       const data = await res.json();
+      if (!mountedRef.current) return;
       if (!res.ok) {
         setCheckoutError(data.error ?? "Checkout gagal");
         return;
@@ -158,9 +161,10 @@ export function CheckoutForm({
         `/checkout/instruksi?invoice=${encodeURIComponent(inv)}`
       );
     } catch {
+      if (!mountedRef.current) return;
       setCheckoutError("Terjadi kesalahan. Coba lagi.");
     } finally {
-      setCheckoutLoading(false);
+      if (mountedRef.current) setCheckoutLoading(false);
     }
   };
 
@@ -307,7 +311,7 @@ export function CheckoutForm({
                 }
               />
             </div>
-            {tab === "ANTAR" && (
+            {(tab === "ANTAR" || tab === "KALENG") && (
               <div>
                 <label className="text-xs font-semibold text-slate-500 mb-1 block">
                   Alamat Pengiriman

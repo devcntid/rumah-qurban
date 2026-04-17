@@ -82,7 +82,8 @@ export async function getCatalogItemsCached(
 ): Promise<CatalogProduct[]> {
   const productCode = TAB_TO_PRODUCT[tab];
   if (!productCode) return [];
-  if (productCode === "QA" && !branchIdParam) return [];
+  const needsBranch = productCode === "QA" || productCode === "QK";
+  if (needsBranch && !branchIdParam) return [];
 
   const redis = getRedis();
   const cacheKey = `cache:catalog:v2:${productCode}:${branchIdParam ?? "na"}`;
@@ -94,7 +95,7 @@ export async function getCatalogItemsCached(
 
   const params: (string | number)[] = [productCode];
   let branchClause = "";
-  if (productCode === "QA") {
+  if (needsBranch) {
     params.push(Number(branchIdParam));
     branchClause = "AND co.branch_id = $2";
   }
@@ -122,6 +123,14 @@ export async function getOfferById(
 ): Promise<CatalogProduct | null> {
   if (!Number.isFinite(offerId) || offerId <= 0) return null;
 
+  const redis = getRedis();
+  const cacheKey = `cache:offer:v2:${offerId}`;
+  if (redis) {
+    const cached = await redis.get(cacheKey);
+    const parsed = parseRedisJson<{ offer: CatalogProduct }>(cached);
+    if (parsed?.offer) return parsed.offer;
+  }
+
   const { rows } = await pool.query<CatalogRow>(
     `
     ${CATALOG_SELECT}
@@ -132,5 +141,9 @@ export async function getOfferById(
   );
   if (rows.length === 0) return null;
   const r = rows[0];
-  return mapRowToCatalogProduct(r, r.product_code);
+  const offer = mapRowToCatalogProduct(r, r.product_code);
+  if (redis) {
+    await redis.set(cacheKey, JSON.stringify({ offer }), { ex: 300 });
+  }
+  return offer;
 }

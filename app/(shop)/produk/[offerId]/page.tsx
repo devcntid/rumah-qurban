@@ -71,7 +71,7 @@ export default async function ProdukPage({ params, searchParams }: Props) {
 
   let branchId: number | null = null;
 
-  if (tab === "ANTAR") {
+  if (tab === "ANTAR" || tab === "KALENG") {
     const cab = sp.cabang != null ? Number(sp.cabang) : NaN;
     if (!Number.isFinite(cab) || cab <= 0) notFound();
     if (offer.branch_id !== cab) notFound();

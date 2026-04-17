@@ -1,12 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function LacakSearchForm() {
   const router = useRouter();
   const [invoice, setInvoice] = useState("");
   const [loading, setLoading] = useState(false);
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -14,6 +16,9 @@ export function LacakSearchForm() {
     if (!inv) return;
     setLoading(true);
     router.push(`/lacak/${encodeURIComponent(inv)}`);
+    requestAnimationFrame(() => {
+      if (mountedRef.current) setLoading(false);
+    });
   };
 
   return (

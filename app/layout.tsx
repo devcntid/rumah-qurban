@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import Script from "next/script";
 import { Source_Sans_3 } from "next/font/google";
+import { GoogleAnalyticsPageView } from "@/components/google-analytics";
 import "./globals.css";
+
+const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 const sourceSans = Source_Sans_3({
   variable: "--font-source-sans",
@@ -61,6 +66,20 @@ export default function RootLayout({
     <html lang="id" className={`${sourceSans.variable} h-full antialiased`}>
       <body className={`min-h-full flex flex-col font-sans ${sourceSans.className}`}>
         {children}
+        {gaId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="gtag-init" strategy="afterInteractive">
+              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}');`}
+            </Script>
+            <Suspense fallback={null}>
+              <GoogleAnalyticsPageView />
+            </Suspense>
+          </>
+        )}
       </body>
     </html>
   );

@@ -6,7 +6,7 @@ export function productPath(
   cabangId?: number | null
 ): string {
   const q = new URLSearchParams({ tab });
-  if (cabangId != null && tab === "ANTAR") q.set("cabang", String(cabangId));
+  if (cabangId != null && (tab === "ANTAR" || tab === "KALENG")) q.set("cabang", String(cabangId));
   return `/produk/${offerId}?${q.toString()}`;
 }
 
@@ -19,12 +19,13 @@ export function checkoutPath(
     offerId: String(offerId),
     tab,
   });
-  if (cabangId != null && tab === "ANTAR") q.set("cabang", String(cabangId));
+  if (cabangId != null && (tab === "ANTAR" || tab === "KALENG")) q.set("cabang", String(cabangId));
   return `/checkout?${q.toString()}`;
 }
 
 export function catalogPath(tab: ShopTab, branchId?: number | null): string {
   if (tab === "ANTAR" && branchId != null) return `/antar/${branchId}`;
+  if (tab === "KALENG" && branchId != null) return `/kaleng/${branchId}`;
   if (tab === "BERBAGI") return "/berbagi";
-  return "/kaleng";
+  return "/kaleng/cabang";
 }

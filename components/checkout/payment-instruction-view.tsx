@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building,
@@ -263,6 +263,8 @@ export function PaymentInstructionView({
   instructions: PaymentInstruction[];
 }) {
   const router = useRouter();
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
   const visual = inferInstructionPaymentType(order);
   const isTransfer = visual === "transfer";
   const methodLabel =
@@ -298,15 +300,17 @@ export function PaymentInstructionView({
         body: form,
       });
       const data = await res.json();
+      if (!mountedRef.current) return;
       if (!res.ok) {
         setUploadError(data.error ?? "Upload gagal. Coba lagi.");
         return;
       }
       router.push(successUrl);
     } catch {
+      if (!mountedRef.current) return;
       setUploadError("Terjadi kesalahan. Coba lagi.");
     } finally {
-      setUploading(false);
+      if (mountedRef.current) setUploading(false);
     }
   };
 

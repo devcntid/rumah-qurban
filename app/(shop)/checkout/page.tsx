@@ -52,13 +52,28 @@ export default async function CheckoutPage({ searchParams }: Props) {
   let branchId: number | null = null;
   let branchName: string | null = null;
 
-  if (tab === "ANTAR") {
+  if (tab === "ANTAR" || tab === "KALENG") {
     const cab = sp.cabang != null ? Number(sp.cabang) : NaN;
     if (!Number.isFinite(cab) || cab <= 0) notFound();
     if (product.branch_id !== cab) notFound();
     branchId = cab;
-    const branches = await getBranchesCached();
+
+    const [branches, methods] = await Promise.all([
+      getBranchesCached(),
+      getPaymentMethodsCached(),
+    ]);
     branchName = branches.find((b) => b.id === cab)?.name ?? null;
+    const paymentCategories = buildPaymentCategories(methods);
+
+    return (
+      <CheckoutForm
+        product={product}
+        tab={tab}
+        branchId={branchId}
+        branchName={branchName}
+        paymentCategories={paymentCategories}
+      />
+    );
   }
 
   const methods = await getPaymentMethodsCached();

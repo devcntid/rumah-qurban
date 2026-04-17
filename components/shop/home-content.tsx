@@ -90,7 +90,7 @@ export function HomeContent() {
               </span>
             </Link>
             <Link
-              href="/kaleng"
+              href="/kaleng/cabang"
               className="flex flex-col items-center p-2 rounded-xl active:bg-amber-50 transition-colors border border-transparent hover:border-amber-100 group"
             >
               <div className="bg-amber-50 text-amber-700 p-3.5 rounded-full mb-2 group-active:scale-95 transition-transform">

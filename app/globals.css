@@ -39,6 +39,14 @@ body {
   scrollbar-width: none;
 }
 
+@keyframes skeleton-fade-in {
+  0%, 80% { opacity: 0; }
+  100% { opacity: 1; }
+}
+.skeleton-delay {
+  animation: skeleton-fade-in 250ms ease-out forwards;
+}
+
 .faq-answer p {
   margin-bottom: 0.5rem;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { Search, MapPin, Loader2 } from "lucide-react";
 
@@ -16,16 +16,16 @@ type NominatimResult = {
   lon: string;
 };
 
-async function geocodeSearch(query: string): Promise<NominatimResult[]> {
+async function geocodeSearch(query: string, signal?: AbortSignal): Promise<NominatimResult[]> {
   const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=id&limit=5`;
-  const res = await fetch(url, { headers: { "Accept-Language": "id" } });
+  const res = await fetch(url, { headers: { "Accept-Language": "id" }, signal });
   if (!res.ok) return [];
   return res.json();
 }
 
-async function reverseGeocode(lat: number, lng: number): Promise<string> {
+async function reverseGeocode(lat: number, lng: number, signal?: AbortSignal): Promise<string> {
   const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
-  const res = await fetch(url, { headers: { "Accept-Language": "id" } });
+  const res = await fetch(url, { headers: { "Accept-Language": "id" }, signal });
   if (!res.ok) return "";
   const data = await res.json();
   return data.display_name ?? "";
@@ -53,19 +53,31 @@ export function AddressMapPicker({
   const [searching, setSearching] = useState(false);
   const [reverseLoading, setReverseLoading] = useState(false);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const handlePlacePin = useCallback(
     async (lat: number, lng: number) => {
       setMarkerPos([lat, lng]);
       setResults([]);
       setReverseLoading(true);
+      abortRef.current?.abort();
+      const ac = new AbortController();
+      abortRef.current = ac;
       try {
-        const addr = await reverseGeocode(lat, lng);
-        onSelect({ lat, lng, address: addr });
-      } catch {
-        onSelect({ lat, lng, address: "" });
+        const addr = await reverseGeocode(lat, lng, ac.signal);
+        if (!ac.signal.aborted) onSelect({ lat, lng, address: addr });
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        if (!ac.signal.aborted) onSelect({ lat, lng, address: "" });
       } finally {
-        setReverseLoading(false);
+        if (!ac.signal.aborted) setReverseLoading(false);
       }
     },
     [onSelect]
@@ -78,11 +90,16 @@ export function AddressMapPicker({
       return;
     }
     setSearching(true);
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
     try {
-      const res = await geocodeSearch(trimmed);
-      setResults(res);
+      const res = await geocodeSearch(trimmed, ac.signal);
+      if (!ac.signal.aborted) setResults(res);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
     } finally {
-      setSearching(false);
+      if (!ac.signal.aborted) setSearching(false);
     }
   }, []);
 

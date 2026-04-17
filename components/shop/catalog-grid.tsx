@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { MapPin } from "lucide-react";
 import type { CatalogProduct } from "@/lib/types/catalog";
@@ -25,7 +26,7 @@ export function CatalogGrid({
         : "Qurban Kaleng";
 
   const catalogTitle =
-    tab === "ANTAR" && branchName ? `${title} · ${branchName}` : title;
+    (tab === "ANTAR" || tab === "KALENG") && branchName ? `${title} · ${branchName}` : title;
 
   return (
     <div className="flex flex-col h-full bg-slate-50 min-h-screen">
@@ -43,11 +44,15 @@ export function CatalogGrid({
             href={productPath(item.catalog_offer_id, tab, branchId ?? null)}
             className="block bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden active:bg-slate-50"
           >
-            <img
-              src={item.img}
-              alt={item.typeName}
-              className="w-full h-40 object-cover"
-            />
+            <div className="relative w-full h-40">
+              <Image
+                src={item.img}
+                alt={item.typeName}
+                fill
+                sizes="(max-width: 448px) 100vw, 448px"
+                className="object-cover"
+              />
+            </div>
             <div className="p-4">
               <h3 className="font-bold text-slate-800 mb-1">{item.typeName}</h3>
 
