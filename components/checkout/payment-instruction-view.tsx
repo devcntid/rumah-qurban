@@ -1,8 +1,12 @@
-import Link from "next/link";
+"use client";
+
+import { useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   Building,
   Copy,
   CreditCard,
+  Loader2,
   QrCode,
   Wallet,
 } from "lucide-react";
@@ -35,9 +39,11 @@ function InstructionSteps({ steps }: { steps: string }) {
 function TransferBlock({
   order,
   instructions,
+  onFileChange,
 }: {
   order: OrderInvoiceSummary;
   instructions: PaymentInstruction[];
+  onFileChange: (file: File | null) => void;
 }) {
   const hasAccount = !!order.account_number;
 
@@ -105,7 +111,7 @@ function TransferBlock({
         </div>
       )}
 
-      <ProofUploader invoiceNumber={order.invoice_number} />
+      <ProofUploader onFileChange={onFileChange} />
     </div>
   );
 }
@@ -229,13 +235,15 @@ function PaymentBlock({
   type,
   order,
   instructions,
+  onFileChange,
 }: {
   type: InstructionPaymentVisual;
   order: OrderInvoiceSummary;
   instructions: PaymentInstruction[];
+  onFileChange: (file: File | null) => void;
 }) {
   if (type === "transfer")
-    return <TransferBlock order={order} instructions={instructions} />;
+    return <TransferBlock order={order} instructions={instructions} onFileChange={onFileChange} />;
   if (type === "va") return <VaBlock instructions={instructions} />;
   if (type === "qris") return <QrisBlock instructions={instructions} />;
   if (type === "ewallet") return <EwalletBlock instructions={instructions} />;
@@ -254,9 +262,53 @@ export function PaymentInstructionView({
   order: OrderInvoiceSummary;
   instructions: PaymentInstruction[];
 }) {
+  const router = useRouter();
   const visual = inferInstructionPaymentType(order);
+  const isTransfer = visual === "transfer";
   const methodLabel =
     order.payment_method_name ?? order.payment_method_code ?? "Metode pembayaran";
+
+  const [proofFile, setProofFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+
+  const handleFileChange = useCallback((file: File | null) => {
+    setProofFile(file);
+    setUploadError("");
+  }, []);
+
+  const handleConfirmPayment = async () => {
+    const successUrl = `/checkout/sukses?invoice=${encodeURIComponent(order.invoice_number)}`;
+
+    if (!isTransfer || !proofFile) {
+      router.push(successUrl);
+      return;
+    }
+
+    setUploading(true);
+    setUploadError("");
+
+    const form = new FormData();
+    form.append("file", proofFile);
+    form.append("invoice", order.invoice_number);
+
+    try {
+      const res = await fetch("/api/upload-proof", {
+        method: "POST",
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setUploadError(data.error ?? "Upload gagal. Coba lagi.");
+        return;
+      }
+      router.push(successUrl);
+    } catch {
+      setUploadError("Terjadi kesalahan. Coba lagi.");
+    } finally {
+      setUploading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 pb-28">
@@ -283,17 +335,36 @@ export function PaymentInstructionView({
             <span className="text-sm font-bold text-slate-800">{methodLabel}</span>
             <IconForType type={visual} />
           </div>
-          <PaymentBlock type={visual} order={order} instructions={instructions} />
+          <PaymentBlock
+            type={visual}
+            order={order}
+            instructions={instructions}
+            onFileChange={handleFileChange}
+          />
         </section>
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-slate-200 p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.03)] z-20">
-        <Link
-          href={`/checkout/sukses?invoice=${encodeURIComponent(order.invoice_number)}`}
-          className="block w-full py-3 rounded-md font-bold transition-colors text-center shadow-md bg-green-600 text-white active:bg-green-700"
+        {uploadError && (
+          <p className="text-xs text-red-600 font-semibold text-center mb-2">
+            {uploadError}
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => void handleConfirmPayment()}
+          disabled={uploading}
+          className="w-full py-3 rounded-md font-bold transition-colors text-center shadow-md bg-green-600 text-white active:bg-green-700 disabled:opacity-60 flex items-center justify-center gap-2"
         >
-          Saya Sudah Bayar
-        </Link>
+          {uploading ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              <span>Mengupload Bukti…</span>
+            </>
+          ) : (
+            "Saya Sudah Bayar"
+          )}
+        </button>
       </div>
     </div>
   );

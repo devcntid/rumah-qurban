@@ -1,4 +1,5 @@
 import { pool } from "@/lib/db";
+import { phoneVariants } from "@/lib/normalize-phone";
 
 export type TrackerPayload = {
   invoice: string;
@@ -20,16 +21,35 @@ export async function fetchTrackerByInvoice(
   const trimmed = identifier?.trim();
   if (!trimmed) return null;
 
-  const { rows: orderRows } = await pool.query<{
+  const variants = phoneVariants(trimmed);
+  const placeholders = variants.map((_, i) => `$${i + 1}`).join(", ");
+
+  let { rows: orderRows } = await pool.query<{
     id: string;
     invoice_number: string;
     customer_name: string;
     status: string;
     created_at: string;
   }>(
-    `SELECT id, invoice_number, customer_name, status, created_at FROM orders WHERE invoice_number = $1 OR customer_phone = $1 ORDER BY created_at DESC LIMIT 1`,
-    [trimmed]
+    `SELECT id, invoice_number, customer_name, status, created_at FROM orders WHERE invoice_number IN (${placeholders}) OR customer_phone IN (${placeholders}) ORDER BY created_at DESC LIMIT 1`,
+    variants
   );
+
+  if (orderRows.length === 0 && /^\d{4,6}$/.test(trimmed)) {
+    const { rows: suffixRows } = await pool.query<{
+      id: string;
+      invoice_number: string;
+      customer_name: string;
+      status: string;
+      created_at: string;
+    }>(
+      `SELECT id, invoice_number, customer_name, status, created_at FROM orders WHERE customer_phone LIKE '%' || $1 ORDER BY created_at DESC LIMIT 2`,
+      [trimmed]
+    );
+    if (suffixRows.length === 1) {
+      orderRows = suffixRows;
+    }
+  }
 
   if (orderRows.length === 0) return null;
   const order = orderRows[0];
