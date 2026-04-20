@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { MapPin } from "lucide-react";
@@ -5,52 +8,83 @@ import type { CatalogProduct } from "@/lib/types/catalog";
 import { formatIDR } from "@/lib/format-idr";
 import type { ShopTab } from "@/lib/routes";
 import { productPath } from "@/lib/routes";
-import { ShopHeader } from "@/components/shop/shop-header";
+
+type SpeciesFilter = "SEMUA" | "SAPI" | "DOMBA_KAMBING";
 
 export function CatalogGrid({
   items,
   tab,
   branchId,
-  branchName,
 }: {
   items: CatalogProduct[];
   tab: ShopTab;
   branchId?: number | null;
-  branchName?: string | null;
 }) {
-  const title =
-    tab === "ANTAR"
-      ? "Qurban Antar"
-      : tab === "BERBAGI"
-        ? "Qurban Berbagi"
-        : "Qurban Kaleng";
+  const [filter, setFilter] = useState<SpeciesFilter>("SEMUA");
 
-  const catalogTitle =
-    (tab === "ANTAR" || tab === "KALENG") && branchName ? `${title} · ${branchName}` : title;
+  const speciesSet = useMemo(() => {
+    const s = new Set<string>();
+    for (const item of items) s.add(item.species);
+    return s;
+  }, [items]);
+
+  const hasSapi = speciesSet.has("Sapi");
+  const hasDombaKambing = speciesSet.has("Domba") || speciesSet.has("Kambing");
+  const showFilter = speciesSet.size > 1;
+
+  const filtered = useMemo(() => {
+    if (filter === "SEMUA") return items;
+    if (filter === "SAPI") return items.filter((i) => i.species === "Sapi");
+    return items.filter((i) => i.species === "Domba" || i.species === "Kambing");
+  }, [items, filter]);
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 min-h-screen">
-      <ShopHeader backHref="/" title={catalogTitle} />
+    <>
+      {showFilter && (
+        <div className="bg-white border-b border-slate-200 px-4 sticky top-[53px] z-10">
+          <div className="flex gap-2 py-2.5 overflow-x-auto">
+            <FilterChip
+              label="Semua"
+              active={filter === "SEMUA"}
+              onClick={() => setFilter("SEMUA")}
+            />
+            {hasSapi && (
+              <FilterChip
+                label="Sapi"
+                active={filter === "SAPI"}
+                onClick={() => setFilter("SAPI")}
+              />
+            )}
+            {hasDombaKambing && (
+              <FilterChip
+                label="Domba / Kambing"
+                active={filter === "DOMBA_KAMBING"}
+                onClick={() => setFilter("DOMBA_KAMBING")}
+              />
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 p-4 space-y-4 overflow-y-auto pb-24">
-        {items.length === 0 && (
+        {filtered.length === 0 && (
           <p className="text-center text-sm text-slate-500">
             Belum ada penawaran di kategori ini.
           </p>
         )}
-        {items.map((item) => (
+        {filtered.map((item) => (
           <Link
             key={item.id}
             href={productPath(item.catalog_offer_id, tab, branchId ?? null)}
             className="block bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden active:bg-slate-50"
           >
-            <div className="relative w-full h-40">
+            <div className="relative w-full aspect-4/3 bg-slate-100">
               <Image
                 src={item.img}
                 alt={item.typeName}
                 fill
                 sizes="(max-width: 448px) 100vw, 448px"
-                className="object-cover"
+                className="object-contain"
               />
             </div>
             <div className="p-4">
@@ -102,6 +136,30 @@ export function CatalogGrid({
           </Link>
         ))}
       </div>
-    </div>
+    </>
+  );
+}
+
+function FilterChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-semibold border transition-colors ${
+        active
+          ? "bg-[#1e3a5f] text-white border-[#1e3a5f]"
+          : "bg-white text-slate-600 border-slate-300 hover:border-slate-400"
+      }`}
+    >
+      {label}
+    </button>
   );
 }

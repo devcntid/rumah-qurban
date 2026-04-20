@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
-import Script from "next/script";
 import { Source_Sans_3 } from "next/font/google";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { GoogleAnalyticsPageView } from "@/components/google-analytics";
 import "./globals.css";
 
@@ -67,19 +67,11 @@ export default function RootLayout({
       <body className={`min-h-full flex flex-col font-sans ${sourceSans.className}`}>
         {children}
         {gaId && (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
-              strategy="afterInteractive"
-            />
-            <Script id="gtag-init" strategy="afterInteractive">
-              {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','${gaId}');`}
-            </Script>
-            <Suspense fallback={null}>
-              <GoogleAnalyticsPageView />
-            </Suspense>
-          </>
+          <Suspense fallback={null}>
+            <GoogleAnalyticsPageView />
+          </Suspense>
         )}
+        {gaId && <GoogleAnalytics gaId={gaId} />}
       </body>
     </html>
   );

@@ -16,6 +16,7 @@ export type CatalogProduct = {
   shipping_fee: number | null;
   slaughter_fee: number | null;
   max_participants: number;
+  species: string;
   /** Cabang untuk QA; null untuk produk nasional */
   branch_id: number | null;
 };

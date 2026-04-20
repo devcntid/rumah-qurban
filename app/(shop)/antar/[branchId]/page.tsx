@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getBranchesCached, getCatalogItemsCached } from "@/lib/data/catalog";
 import { CatalogGrid } from "@/components/shop/catalog-grid";
+import { ShopHeader } from "@/components/shop/shop-header";
 
 type Props = { params: Promise<{ branchId: string }> };
 
@@ -31,11 +32,9 @@ export default async function AntarBranchCatalogPage({ params }: Props) {
   const items = await getCatalogItemsCached("ANTAR", String(id));
 
   return (
-    <CatalogGrid
-      items={items}
-      tab="ANTAR"
-      branchId={id}
-      branchName={branch.name}
-    />
+    <div className="flex flex-col h-full bg-slate-50 min-h-screen">
+      <ShopHeader backHref="/" title={`Qurban Antar · ${branch.name}`} />
+      <CatalogGrid items={items} tab="ANTAR" branchId={id} />
+    </div>
   );
 }

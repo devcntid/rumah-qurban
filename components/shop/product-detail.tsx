@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Info, MapPin } from "lucide-react";
 import type { CatalogProduct } from "@/lib/types/catalog";
@@ -35,11 +36,16 @@ export function ProductDetailView({
       </header>
 
       <div className="flex-1 overflow-y-auto pb-28">
-        <img
-          src={product.img}
-          alt={product.typeName}
-          className="w-full h-72 object-cover"
-        />
+        <div className="relative w-full aspect-4/3 bg-slate-100">
+          <Image
+            src={product.img}
+            alt={product.typeName}
+            fill
+            sizes="(max-width: 448px) 100vw, 448px"
+            className="object-contain"
+            priority
+          />
+        </div>
 
         <div className="bg-white p-5 rounded-t-xl -mt-4 relative z-10 shadow-sm border-t border-slate-200">
           <div className="flex justify-between items-start mb-2">

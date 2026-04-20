@@ -58,6 +58,7 @@ export function mapRowToCatalogProduct(
     shipping_fee: shipping,
     slaughter_fee: slaughter,
     max_participants: maxP,
+    species: r.species,
     branch_id: r.branch_id != null ? Number(r.branch_id) : null,
   };
 }

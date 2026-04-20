@@ -25,12 +25,14 @@ export function DocumentationDetail({ data }: { data: DocumentationPayload }) {
           <FileText size={18} /> Sertifikat
         </h2>
         {data.certificateAvailable ? (
-          <button
-            type="button"
+          <a
+            href={`/api/certificate?invoice=${encodeURIComponent(data.invoice)}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="w-full flex items-center justify-center gap-2 py-3 border border-[#1e3a5f] text-[#1e3a5f] rounded-md font-semibold text-sm"
           >
             <Download size={18} /> Unduh Sertifikat
-          </button>
+          </a>
         ) : (
           <p className="text-xs text-slate-500">
             Sertifikat akan tersedia setelah pembayaran terverifikasi.
