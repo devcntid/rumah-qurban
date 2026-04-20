@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { renderToStream } from "@react-pdf/renderer";
 import React from "react";
 import path from "path";
+import fs from "fs";
 import { pool } from "@/lib/db";
 import { rateLimitTracker } from "@/lib/rate-limit";
 import {
@@ -21,6 +22,7 @@ type CertRow = {
   slaughtered_at: string | null;
   performed_by: string | null;
   certificate_url: string | null;
+  documentation_photos: string | null;
   item_name: string | null;
   branch_name: string | null;
 };
@@ -60,6 +62,7 @@ export async function GET(req: NextRequest) {
       sr.slaughtered_at,
       sr.performed_by,
       sr.certificate_url,
+      sr.documentation_photos::text AS documentation_photos,
       oi.item_name,
       b.name AS branch_name
     FROM orders o
@@ -109,14 +112,33 @@ export async function GET(req: NextRequest) {
   const hijriYear = new Date().getFullYear() - 579;
   const slaughterLocation =
     data.slaughter_location || data.branch_name || "-";
-  const logoPath = path.join(process.cwd(), "public", "logo-agro.png");
+
+  let photos: string[] = [];
+  if (data.documentation_photos) {
+    try {
+      const parsed: { url: string }[] =
+        typeof data.documentation_photos === "string"
+          ? JSON.parse(data.documentation_photos)
+          : data.documentation_photos;
+      photos = parsed.slice(0, 4).map((p) => p.url);
+    } catch {
+      photos = [];
+    }
+  }
+
+  const localLogo = path.join(process.cwd(), "public", "logo-agro.png");
+  const logoFileExists = fs.existsSync(localLogo);
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://tracking.rumahqurban.id";
 
   const props: CertificateTemplateProps = {
     mainName,
     slaughterDate,
     slaughterLocation,
     hijriYear,
-    logoPath,
+    photos,
+    logoPath: logoFileExists ? localLogo : undefined,
+    logoUrl: logoFileExists ? undefined : `${siteUrl}/logo-agro.png`,
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

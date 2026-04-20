@@ -248,6 +248,35 @@ const s = StyleSheet.create({
     textAlign: "center",
     marginTop: 2,
   },
+
+  docsSection: {
+    paddingHorizontal: 30,
+    paddingTop: 10,
+    paddingBottom: 16,
+  },
+  docsTitle: {
+    textAlign: "center",
+    backgroundColor: NAVY,
+    color: "white",
+    paddingVertical: 8,
+    borderRadius: 8,
+    fontWeight: 700,
+    fontSize: 13,
+    letterSpacing: 3,
+    marginBottom: 14,
+  },
+  photoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 10,
+  },
+  photoItem: {
+    width: 170,
+    height: 128,
+    borderRadius: 8,
+    objectFit: "cover",
+  },
 });
 
 export interface CertificateTemplateProps {
@@ -255,7 +284,9 @@ export interface CertificateTemplateProps {
   slaughterDate: string;
   slaughterLocation: string;
   hijriYear: number;
+  photos: string[];
   logoPath?: string;
+  logoUrl?: string;
 }
 
 function Corners() {
@@ -273,21 +304,24 @@ function HeaderBlock({
   badge,
   badgeStyle,
   logoPath,
+  logoUrl,
 }: {
   badge: string;
   badgeStyle: "red" | "gold";
   logoPath?: string;
+  logoUrl?: string;
 }) {
+  const logoSrc = logoPath || logoUrl;
   return (
     <View style={s.headerArea}>
-      {logoPath ? (
-        <Image src={logoPath} style={s.logoImage} />
+      {logoSrc ? (
+        <Image src={logoSrc} style={s.logoImage} />
       ) : (
         <Text style={s.logoText}>
           <Text style={s.logoTextAccent}>rumah</Text>qurban
         </Text>
       )}
-      <Text style={badgeStyle === "red" ? s.badge : s.badgeGold}>{badge}</Text>
+      <Text style={badgeStyle === "gold" ? s.badgeGold : s.badge}>{badge}</Text>
       <View style={s.titleRow}>
         <Text style={s.titleQurban}>Qurban</Text>
         <Text style={s.titleBerbagi}>Berbagi</Text>
@@ -350,18 +384,29 @@ function InfoBlock({
 }
 
 export function CertificateTemplate(props: CertificateTemplateProps) {
+  const headerProps = { logoPath: props.logoPath, logoUrl: props.logoUrl };
   return (
     <Document>
       {/* Page 1: LAPORAN */}
       <Page size="A4" style={s.page}>
         <Corners />
-        <HeaderBlock badge="LAPORAN" badgeStyle="red" logoPath={props.logoPath} />
+        <HeaderBlock badge="LAPORAN" badgeStyle="red" {...headerProps} />
         <InfoBlock
           name={props.mainName}
           location={props.slaughterLocation}
           date={props.slaughterDate}
           hijriYear={props.hijriYear}
         />
+        {props.photos.length > 0 && (
+          <View style={s.docsSection}>
+            <Text style={s.docsTitle}>D O K U M E N T A S I</Text>
+            <View style={s.photoGrid}>
+              {props.photos.map((url, i) => (
+                <Image key={i} src={url} style={s.photoItem} />
+              ))}
+            </View>
+          </View>
+        )}
         <View style={s.signatureArea}>
           <View style={s.signatureLine} />
           <Text style={s.signatureName}>Edhu Enriadis Adilingga</Text>
@@ -372,7 +417,7 @@ export function CertificateTemplate(props: CertificateTemplateProps) {
       {/* Page 2: SERTIFIKAT */}
       <Page size="A4" style={s.page}>
         <Corners />
-        <HeaderBlock badge="S E R T I F I K A T" badgeStyle="gold" logoPath={props.logoPath} />
+        <HeaderBlock badge="S E R T I F I K A T" badgeStyle="gold" {...headerProps} />
         <InfoBlock
           name={props.mainName}
           location={props.slaughterLocation}

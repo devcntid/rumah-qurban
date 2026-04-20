@@ -1,10 +1,11 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Info, MapPin } from "lucide-react";
+import { Info, MapPin } from "lucide-react";
 import type { CatalogProduct } from "@/lib/types/catalog";
 import { formatIDR } from "@/lib/format-idr";
 import type { ShopTab } from "@/lib/routes";
 import { catalogPath, checkoutPath } from "@/lib/routes";
+import { ShopHeader } from "@/components/shop/shop-header";
 
 export function ProductDetailView({
   product,
@@ -25,15 +26,7 @@ export function ProductDetailView({
 
   return (
     <div className="flex flex-col h-full bg-slate-50 min-h-screen relative">
-      <header className="absolute top-0 left-0 right-0 p-4 z-10 flex justify-between">
-        <Link
-          href={catalogPath(tab, branchId)}
-          className="bg-black/40 backdrop-blur-md text-white p-2 rounded-md"
-          aria-label="Kembali ke katalog"
-        >
-          <ArrowLeft size={20} />
-        </Link>
-      </header>
+      <ShopHeader backHref={catalogPath(tab, branchId)} title="Detail Produk" />
 
       <div className="flex-1 overflow-y-auto pb-28">
         <div className="relative w-full aspect-4/3 bg-slate-100">
