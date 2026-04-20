@@ -5,6 +5,8 @@ import { getOfferById, TAB_TO_PRODUCT } from "@/lib/data/catalog";
 import { ProductDetailView } from "@/components/shop/product-detail";
 import type { ShopTab } from "@/lib/routes";
 
+export const revalidate = 300;
+
 type Props = {
   params: Promise<{ offerId: string }>;
   searchParams: Promise<{ tab?: string; cabang?: string }>;

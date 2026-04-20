@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { pool } from "@/lib/db";
 import { getRedis, parseRedisJson } from "@/lib/redis";
 import type { BranchRow, CatalogProduct } from "@/lib/types/catalog";
@@ -56,7 +57,7 @@ const CATALOG_SELECT = `
     ) sl ON true
 `;
 
-export async function getBranchesCached(): Promise<BranchRow[]> {
+async function _getBranches(): Promise<BranchRow[]> {
   const CACHE_KEY = "cache:branches:v2";
   const TTL = 600;
   const redis = getRedis();
@@ -76,7 +77,11 @@ export async function getBranchesCached(): Promise<BranchRow[]> {
   return branches;
 }
 
-export async function getCatalogItemsCached(
+export const getBranchesCached = unstable_cache(_getBranches, ["branches"], {
+  revalidate: 300,
+});
+
+async function _getCatalogItems(
   tab: string,
   branchIdParam: string | null
 ): Promise<CatalogProduct[]> {
@@ -118,7 +123,17 @@ export async function getCatalogItemsCached(
   return items;
 }
 
-export async function getOfferById(
+export async function getCatalogItemsCached(
+  tab: string,
+  branchIdParam: string | null
+): Promise<CatalogProduct[]> {
+  const key = `catalog-${tab}-${branchIdParam ?? "na"}`;
+  return unstable_cache(() => _getCatalogItems(tab, branchIdParam), [key], {
+    revalidate: 300,
+  })();
+}
+
+async function _getOfferById(
   offerId: number
 ): Promise<CatalogProduct | null> {
   if (!Number.isFinite(offerId) || offerId <= 0) return null;
@@ -146,4 +161,12 @@ export async function getOfferById(
     await redis.set(cacheKey, JSON.stringify({ offer }), { ex: 300 });
   }
   return offer;
+}
+
+export async function getOfferById(
+  offerId: number
+): Promise<CatalogProduct | null> {
+  return unstable_cache(() => _getOfferById(offerId), [`offer-${offerId}`], {
+    revalidate: 300,
+  })();
 }

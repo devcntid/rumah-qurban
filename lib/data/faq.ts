@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { pool } from "@/lib/db";
 import { getRedis, parseRedisJson } from "@/lib/redis";
 
@@ -26,7 +27,7 @@ function sanitizeAnswer(raw: string): string {
     .join("");
 }
 
-export async function getFaqsCached(): Promise<FaqCategory[]> {
+async function _getFaqs(): Promise<FaqCategory[]> {
   const redis = getRedis();
 
   if (redis) {
@@ -75,3 +76,7 @@ export async function getFaqsCached(): Promise<FaqCategory[]> {
 
   return categories;
 }
+
+export const getFaqsCached = unstable_cache(_getFaqs, ["faqs"], {
+  revalidate: 3600,
+});

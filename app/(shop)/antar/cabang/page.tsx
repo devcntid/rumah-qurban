@@ -4,6 +4,8 @@ import { ChevronRight } from "lucide-react";
 import { getBranchesCached } from "@/lib/data/catalog";
 import { ShopHeader } from "@/components/shop/shop-header";
 
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "Pilih Cabang — Qurban Antar",
   description: "Pilih cabang wilayah untuk melihat katalog Qurban Antar.",

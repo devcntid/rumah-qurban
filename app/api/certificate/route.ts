@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { renderToStream } from "@react-pdf/renderer";
+import React from "react";
+import path from "path";
 import { pool } from "@/lib/db";
 import { rateLimitTracker } from "@/lib/rate-limit";
-import { jsPDF } from "jspdf";
+import {
+  CertificateTemplate,
+  type CertificateTemplateProps,
+} from "@/components/certificates/certificate-template";
 
 type CertRow = {
   order_id: string;
@@ -88,171 +94,42 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(data.certificate_url);
   }
 
-  const pdf = generateCertificatePDF(data);
-  const buffer = pdf.output("arraybuffer");
+  const mainName = data.participant_name || data.customer_name;
+  const slaughterDate = data.slaughtered_at
+    ? new Date(data.slaughtered_at).toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      })
+    : new Date().toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+  const hijriYear = new Date().getFullYear() - 579;
+  const slaughterLocation =
+    data.slaughter_location || data.branch_name || "-";
+  const logoPath = path.join(process.cwd(), "public", "logo-agro.png");
 
-  return new NextResponse(buffer, {
-    status: 200,
+  const props: CertificateTemplateProps = {
+    mainName,
+    slaughterDate,
+    slaughterLocation,
+    hijriYear,
+    logoPath,
+  };
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const stream = await renderToStream(
+    React.createElement(CertificateTemplate, props) as any
+  );
+
+  const safeName = mainName.replace(/[^a-zA-Z0-9\s-]/g, "").trim();
+
+  return new NextResponse(stream as unknown as ReadableStream, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="Sertifikat-${invoice}.pdf"`,
+      "Content-Disposition": `inline; filename="Sertifikat Qurban - ${safeName}.pdf"`,
     },
   });
-}
-
-function formatHijriDate(date: Date): string {
-  const months = [
-    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
-    "Juli", "Agustus", "September", "Oktober", "November", "Desember",
-  ];
-  const day = date.getDate();
-  const month = months[date.getMonth()];
-  const year = date.getFullYear();
-
-  const hijriYear = Math.floor((year - 622) * (33 / 32)) + 1;
-
-  return `${day} ${month} ${year} - ${hijriYear} H`;
-}
-
-function generateCertificatePDF(data: CertRow): jsPDF {
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-
-  const participantName =
-    data.participant_name || data.customer_name;
-  const location =
-    data.slaughter_location || data.branch_name || "-";
-  const slaughterDate = data.slaughtered_at
-    ? formatHijriDate(new Date(data.slaughtered_at))
-    : formatHijriDate(new Date());
-  const productName = data.item_name || "Qurban";
-
-  drawPage(doc, pageW, pageH, {
-    heading: "L A P O R A N",
-    subHeading: productName,
-    participantName,
-    location,
-    date: slaughterDate,
-    showSignature: true,
-  });
-
-  doc.addPage("a4", "landscape");
-
-  drawPage(doc, pageW, pageH, {
-    heading: "S E R T I F I K A T",
-    subHeading: productName,
-    participantName,
-    location,
-    date: slaughterDate,
-    showSignature: false,
-  });
-
-  return doc;
-}
-
-function drawPage(
-  doc: jsPDF,
-  pageW: number,
-  pageH: number,
-  opts: {
-    heading: string;
-    subHeading: string;
-    participantName: string;
-    location: string;
-    date: string;
-    showSignature: boolean;
-  }
-) {
-  const cx = pageW / 2;
-
-  doc.setFillColor(30, 58, 95);
-  doc.rect(0, 0, pageW, pageH, "F");
-
-  const margin = 12;
-  const innerW = pageW - margin * 2;
-  const innerH = pageH - margin * 2;
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(margin, margin, innerW, innerH, 4, 4, "F");
-
-  doc.setDrawColor(30, 58, 95);
-  doc.setLineWidth(0.5);
-  doc.roundedRect(margin + 4, margin + 4, innerW - 8, innerH - 8, 2, 2, "S");
-
-  let y = margin + 25;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(28);
-  doc.setTextColor(30, 58, 95);
-  doc.text(opts.heading, cx, y, { align: "center" });
-  y += 12;
-
-  doc.setFontSize(16);
-  doc.setTextColor(120, 120, 120);
-  doc.text(opts.subHeading, cx, y, { align: "center" });
-  y += 16;
-
-  doc.setFontSize(11);
-  doc.setTextColor(80, 80, 80);
-  doc.text("Dipersembahkan Khusus Kepada :", cx, y, { align: "center" });
-  y += 14;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(26);
-  doc.setTextColor(30, 58, 95);
-  doc.text(opts.participantName, cx, y, { align: "center" });
-  y += 10;
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(80, 80, 80);
-  doc.text(
-    "Terima kasih telah memilih berqurban di Rumah Qurban",
-    cx,
-    y,
-    { align: "center" }
-  );
-  y += 16;
-
-  const colGap = 60;
-  const leftColX = cx - colGap;
-  const rightColX = cx + colGap;
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(30, 58, 95);
-  doc.text("Lokasi", leftColX, y, { align: "center" });
-  doc.text("Tanggal", rightColX, y, { align: "center" });
-  y += 6;
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(60, 60, 60);
-  doc.text(opts.location, leftColX, y, { align: "center" });
-  doc.text(opts.date, rightColX, y, { align: "center" });
-  y += 16;
-
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(9);
-  doc.setTextColor(80, 80, 80);
-  const doaText =
-    "Semoga amal ibadah qurbannya diterima oleh Allah SWT dan senantiasa dirahmati dengan iman, ilmu,\namal shaleh serta akhlak yang mulia, dan juga kebaikan di dunia dan akhirat. Aamiin";
-  doc.text(doaText, cx, y, {
-    align: "center",
-    maxWidth: innerW - 40,
-  });
-  y += 16;
-
-  if (opts.showSignature) {
-    y = pageH - margin - 30;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.setTextColor(30, 58, 95);
-    doc.text("Edhu Enriadis Adilingga", cx, y, { align: "center" });
-    y += 5;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text("Project Leader Rumah Qurban", cx, y, { align: "center" });
-  }
 }

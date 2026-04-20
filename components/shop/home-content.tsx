@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   Heart,
   Phone,
@@ -30,10 +31,13 @@ export function HomeContent() {
 
       <div className="relative bg-slate-900 text-white p-6 pb-12 pt-10">
         <div className="absolute inset-0 opacity-40 mix-blend-overlay">
-          <img
+          <Image
             src="https://images.pexels.com/photos/840111/pexels-photo-840111.jpeg?auto=compress&cs=tinysrgb&w=800"
-            className="w-full h-full object-cover"
             alt="Qurban Farm"
+            fill
+            sizes="(max-width: 448px) 100vw, 448px"
+            className="object-cover"
+            priority
           />
         </div>
         <div className="relative z-10">

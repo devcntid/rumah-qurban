@@ -4,6 +4,8 @@ import { getBranchesCached, getCatalogItemsCached } from "@/lib/data/catalog";
 import { CatalogGrid } from "@/components/shop/catalog-grid";
 import { ShopHeader } from "@/components/shop/shop-header";
 
+export const revalidate = 300;
+
 type Props = { params: Promise<{ branchId: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
